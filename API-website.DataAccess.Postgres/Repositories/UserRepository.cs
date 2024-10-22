@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 
 public class UserRepository : IUserRepository
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly DBContext _dbContext;
 
-    public UserRepository(ApplicationDbContext dbContext)
+    public UserRepository(DBContext dbContext)
     {
         _dbContext = dbContext;
     }
@@ -23,8 +23,26 @@ public class UserRepository : IUserRepository
 
     public async Task CreateUserAsync(User user)
     {
-        await _dbContext.Users.AddAsync(user);
-        await _dbContext.SaveChangesAsync();
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        try
+        {
+            await _dbContext.Users.AddAsync(user);
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException dbEx)
+        {
+            // Обработайте ошибку здесь
+            throw new Exception("Error saving user to the database.", dbEx);
+        }
+        catch (Exception ex)
+        {
+            // Обработка других исключений
+            throw new Exception("An error occurred while creating the user.", ex);
+        }
     }
 
     public async Task UpdateUserAsync(User user)

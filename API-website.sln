@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API-website", "API-website\API-website.csproj", "{09246E9D-725F-489C-845D-47FDB0045203}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API-website", "API-website\API-website.csproj", "{09246E9D-725F-489C-845D-47FDB0045203}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API-website.Application", "API-website.Application\API-website.Application.csproj", "{BFE619E0-1141-4427-8FD7-B60A19B10CAE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API-website.DataAccess.Postgres", "API-website.DataAccess.Postgres\API-website.DataAccess.Postgres.csproj", "{C9EB6739-6401-4CEB-8175-D863DC17FE68}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{09246E9D-725F-489C-845D-47FDB0045203}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09246E9D-725F-489C-845D-47FDB0045203}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09246E9D-725F-489C-845D-47FDB0045203}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFE619E0-1141-4427-8FD7-B60A19B10CAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFE619E0-1141-4427-8FD7-B60A19B10CAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFE619E0-1141-4427-8FD7-B60A19B10CAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFE619E0-1141-4427-8FD7-B60A19B10CAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

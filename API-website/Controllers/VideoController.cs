@@ -74,11 +74,12 @@ public class VideoController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterUser([FromForm] string username, [FromForm] int password)
+    public async Task<IActionResult> RegisterUser([FromForm] string username, [FromForm] string password)
     {
         try
         {
-            await _userService.RegisterUserAsync(username, password);
+            var id = 1;
+            await _userService.RegisterUserAsync(id, username, password);
             return Ok("User registered successfully.");
         }
         catch (Exception ex)
