@@ -7,8 +7,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.HasKey(u => u.Id);
 
-        builder.
-            HasMany(u => u.Videos)
+        builder
+            .HasMany(u => u.Videos)
             .WithMany(v => v.Users);
     }
 }
+  

@@ -27,6 +27,7 @@ builder.Services.AddScoped<UserService>();
 
 // Регистрация UserRepository как реализацию IUserService
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 
 // Настройка базы данных через DbContext
 builder.Services.AddDbContext<DBContext>(options =>

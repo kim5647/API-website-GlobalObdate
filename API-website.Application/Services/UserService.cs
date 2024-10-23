@@ -9,7 +9,7 @@ public class UserService
         _iUserRepository = IUserRepository;
     }
 
-    public async Task RegisterUserAsync(int id, string username, string password)
+    public async Task RegisterUserAsync(string username, string password)
     {
 
         if (string.IsNullOrWhiteSpace(username))
@@ -24,7 +24,6 @@ public class UserService
 
         var user = new User
         {
-            Id = id,
             Username = username,
             Password = password
         };

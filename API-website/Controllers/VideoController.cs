@@ -42,12 +42,12 @@ public class VideoController : ControllerBase
     }
 
     [HttpPost("save")]
-    public async Task<IActionResult> SaveVideo(IFormFile video)
+    public async Task<IActionResult> SaveVideo(IFormFile video, [FromForm] string username)
     {
         try
         {
-            var filePath = await _videoService.SaveVideoAsync(video, "G:/video");
-            return Ok(new { message = "Video saved successfully", path = filePath });
+            var filePath = await _videoService.SaveVideoAsync(video, $"G:/video/{username}");
+            return Ok("Video saved successfully");
         }
         catch (ArgumentException ex)
         {
@@ -78,8 +78,7 @@ public class VideoController : ControllerBase
     {
         try
         {
-            var id = 1;
-            await _userService.RegisterUserAsync(id, username, password);
+            await _userService.RegisterUserAsync(username, password);
             return Ok("User registered successfully.");
         }
         catch (Exception ex)

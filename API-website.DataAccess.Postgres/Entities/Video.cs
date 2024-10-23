@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 public class Video
 {
     [Key]
-    public Guid Id { get; set; } // Первичный ключ
+    public int Id { get; set; } // Первичный ключ
     [Required]
     public string NameVideo { get; set; }
     [Required]
