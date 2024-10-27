@@ -2,6 +2,9 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Xabe.FFmpeg;
+using API_website.DataAccess.Postgres.Repositories;
+using API_website.DataAccess.Postgres.Entities;
+//using API_website.Application.Interfaces.Repository;
 
 public class VideoService
 {
@@ -38,7 +41,7 @@ public class VideoService
         return trimmedFilePath;
     }
 
-    public async Task<string> SaveVideoAsync(IFormFile video, string destinationPath)
+    public async Task<string> SaveVideoAsync(IFormFile video, string destinationPath, string username)
     {
         if (video == null || video.Length <= 0)
         {
@@ -57,10 +60,13 @@ public class VideoService
             await video.CopyToAsync(stream);
         }
 
+        int userId = await _videoRepository.GetUserId(username);
+
         var dbvideo = new Video
         {
             NameVideo = video.FileName,
             PathVideo = filePath,
+            UserId = userId,
         };
         await _videoRepository.AddPathVideo(dbvideo);
 

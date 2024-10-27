@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Interfaces\Repositories\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\API-website.DataAccess.Postgres\API-website.DataAccess.Postgres.csproj" />
   </ItemGroup>
 

@@ -1,5 +1,6 @@
-//using System.Threading.Tasks;
-
+//using API_website.Application.Interfaces.Repository;
+using API_website.DataAccess.Postgres.Repositories;
+using API_website.DataAccess.Postgres.Entities;
 public class UserService
 {
     private readonly IUserRepository _iUserRepository;

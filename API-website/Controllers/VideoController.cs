@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 [ApiController]
@@ -46,7 +47,7 @@ public class VideoController : ControllerBase
     {
         try
         {
-            var filePath = await _videoService.SaveVideoAsync(video, $"G:/video/{username}");
+            var filePath = await _videoService.SaveVideoAsync(video, $"G:/video/{username}", username);
             return Ok("Video saved successfully");
         }
         catch (ArgumentException ex)
@@ -60,17 +61,29 @@ public class VideoController : ControllerBase
     }
 
     [HttpGet("{filename}")]
-    public IActionResult GetVideo(string filename)
+    public async Task<IActionResult> GetVideo(string filename)
     {
         var filePath = Path.Combine("G:/video", filename);
 
+        // Проверяем существование файла
         if (!System.IO.File.Exists(filePath))
         {
-            return NotFound();
+            return NotFound(); // Возвращаем 404, если файл не найден
         }
 
-        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        return File(fileStream, "video/mp4");
+        // Используем using для автоматического освобождения ресурсов
+        try
+        {
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            // Возвращаем файл как поток
+            return File(fileStream, "video/mp4", enableRangeProcessing: true);
+        }
+        catch (Exception ex)
+        {
+            // Обрабатываем исключения, например, доступ к файлу
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
     }
 
     [HttpPost("register")]

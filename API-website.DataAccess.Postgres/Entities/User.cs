@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+
+namespace API_website.DataAccess.Postgres.Entities;
 public class User
 {
     [Key] // ”казывает, что это первичный ключ в базе данных
@@ -12,5 +14,7 @@ public class User
     [Required] // ќб€зательное поле
     [StringLength(100, ErrorMessage = "Username cannot exceed 100 characters.")]
     public string Password { get; set; }
-    public List<Video> Videos { get; set; } = new List<Video>();
+
+    public List<Video> Videos { get; set; } = [];
+
 }

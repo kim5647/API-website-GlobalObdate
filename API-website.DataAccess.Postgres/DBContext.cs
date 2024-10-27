@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-
+using API_website.DataAccess.Postgres.Entities;
 
 public class DBContext : DbContext
 {

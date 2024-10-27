@@ -9,7 +9,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder
             .HasMany(u => u.Videos)
-            .WithMany(v => v.Users);
+            .WithOne(v => v.User)
+            .HasForeignKey(v => v.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
   

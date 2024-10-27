@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API-website.Application", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API-website.DataAccess.Postgres", "API-website.DataAccess.Postgres\API-website.DataAccess.Postgres.csproj", "{C9EB6739-6401-4CEB-8175-D863DC17FE68}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API-website.Infrastructure", "API-website.Infrastructure\API-website.Infrastructure.csproj", "{74EAE626-F97C-4D07-8D2B-1002E653F430}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9EB6739-6401-4CEB-8175-D863DC17FE68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74EAE626-F97C-4D07-8D2B-1002E653F430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74EAE626-F97C-4D07-8D2B-1002E653F430}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74EAE626-F97C-4D07-8D2B-1002E653F430}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74EAE626-F97C-4D07-8D2B-1002E653F430}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

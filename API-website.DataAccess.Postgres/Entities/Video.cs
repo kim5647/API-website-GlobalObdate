@@ -1,5 +1,8 @@
+using API_website.DataAccess.Postgres.Entities;
 using System.ComponentModel.DataAnnotations;
 
+
+namespace API_website.DataAccess.Postgres.Entities;
 public class Video
 {
     [Key]
@@ -8,5 +11,8 @@ public class Video
     public string NameVideo { get; set; }
     [Required]
     public string PathVideo { get; set; }
-    public List<User> Users { get; set; } = new List<User>();
+    [Required]
+    public int UserId { get; set; }
+
+    public User? User { get; set; }
 }
