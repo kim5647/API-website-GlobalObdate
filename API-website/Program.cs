@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using API_website.DataAccess.Postgres.Repositories;
 using System.Net;
 
 var builder = WebApplication.CreateSlimBuilder(args);

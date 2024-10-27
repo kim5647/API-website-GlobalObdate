@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using API_website.DataAccess.Postgres.Entities;
 
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
