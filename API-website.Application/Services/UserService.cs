@@ -1,6 +1,5 @@
-//using API_website.Application.Interfaces.Repository;
-using API_website.DataAccess.Postgres.Repositories;
-using API_website.DataAccess.Postgres.Entities;
+using API_website.Application.Interfaces.Repositories;
+using API_website.Core.Models;
 public class UserService
 {
     private readonly IUserRepository _iUserRepository;
@@ -23,11 +22,7 @@ public class UserService
             throw new ArgumentException("Password cannot be empty.", nameof(password));
         }
 
-        var user = new User
-        {
-            Username = username,
-            Password = password
-        };
+        var user = new User(username, password);
 
         await _iUserRepository.CreateUserAsync(user);
     }

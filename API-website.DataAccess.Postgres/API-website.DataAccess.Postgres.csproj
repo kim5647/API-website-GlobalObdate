@@ -23,4 +23,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\API-website.Application\API-website.Application.csproj" />
+    <ProjectReference Include="..\API-website.Core\API-website.Core.csproj" />
+  </ItemGroup>
+
 </Project>

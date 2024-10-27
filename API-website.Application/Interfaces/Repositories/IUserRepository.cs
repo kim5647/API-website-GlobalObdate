@@ -1,9 +1,5 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using API_website.DataAccess.Postgres.Entities;
-
-//namespace API_website.Application.Interfaces.Repository;
-namespace API_website.DataAccess.Postgres.Repositories;
+using API_website.Core.Models;
+namespace API_website.Application.Interfaces.Repositories;
 public interface IUserRepository
 {
     Task<User> GetUserByIdAsync(int userId);
@@ -12,3 +8,4 @@ public interface IUserRepository
     Task UpdateUserAsync(User user);
     Task DeleteUserAsync(int userId);
 }
+ 

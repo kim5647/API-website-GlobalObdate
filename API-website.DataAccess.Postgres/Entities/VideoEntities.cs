@@ -3,16 +3,16 @@ using System.ComponentModel.DataAnnotations;
 
 
 namespace API_website.DataAccess.Postgres.Entities;
-public class Video
+public class VideoEntities
 {
     [Key]
     public int Id { get; set; } // Первичный ключ
     [Required]
-    public string NameVideo { get; set; }
+    public string NameVideo { get; set; } = string.Empty;
     [Required]
-    public string PathVideo { get; set; }
+    public string PathVideo { get; set; } = string.Empty;
     [Required]
     public int UserId { get; set; }
 
-    public User? User { get; set; }
+    public UserEntities? User { get; set; }
 }

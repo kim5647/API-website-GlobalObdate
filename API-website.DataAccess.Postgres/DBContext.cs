@@ -7,8 +7,8 @@ public class DBContext : DbContext
     {
     }
 
-    public DbSet<User> Users { get; set; }
-    public DbSet<Video> Videos { get; set; }
+    public DbSet<UserEntities> Users { get; set; }
+    public DbSet<VideoEntities> Videos { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new UserConfiguration());

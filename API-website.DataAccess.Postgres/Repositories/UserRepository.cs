@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-//using API_website.Application.Interfaces.Repository;
+using API_website.Application.Interfaces.Repositories;
 using API_website.DataAccess.Postgres.Entities;
+using API_website.Core.Models;
+
 
 namespace API_website.DataAccess.Postgres.Repositories
 {
@@ -15,56 +15,74 @@ namespace API_website.DataAccess.Postgres.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<User> GetUserByIdAsync(int userId)
-        {
-            return await _dbContext.Users.FindAsync(userId);
-        }
-
+        // Получение всех пользователей с преобразованием в User
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            return await _dbContext.Users.ToListAsync();
+            var userEntities = await _dbContext.Users.ToListAsync();
+            return userEntities.Select(e => new User(e.Id, e.Username, e.Password));
         }
 
+        // Создание нового пользователя
         public async Task CreateUserAsync(User user)
         {
             if (user == null)
-            {
                 throw new ArgumentNullException(nameof(user));
-            }
 
             try
             {
-                await _dbContext.Users.AddAsync(user);
+                var userEntity = new UserEntities
+                {
+                    Username = user.Username,
+                    Password = user.Password
+                };
+
+                await _dbContext.Users.AddAsync(userEntity);
                 await _dbContext.SaveChangesAsync();
             }
             catch (DbUpdateException dbEx)
             {
-                // Обработайте ошибку здесь
                 throw new Exception("Error saving user to the database.", dbEx);
             }
             catch (Exception ex)
             {
-                // Обработка других исключений
                 throw new Exception("An error occurred while creating the user.", ex);
             }
         }
 
+        // Обновление существующего пользователя
         public async Task UpdateUserAsync(User user)
         {
-            _dbContext.Users.Update(user);
+            var userEntity = await _dbContext.Users.FindAsync(user.Id);
+            if (userEntity == null)
+                throw new KeyNotFoundException($"User with Id {user.Id} not found.");
+
+            userEntity.Username = user.Username;
+            userEntity.Password = user.Password;
+
+            _dbContext.Users.Update(userEntity);
             await _dbContext.SaveChangesAsync();
         }
 
+        // Удаление пользователя по ID
         public async Task DeleteUserAsync(int userId)
         {
-            var user = await _dbContext.Users.FindAsync(userId);
-            if (user != null)
+            var userEntity = await _dbContext.Users.FindAsync(userId);
+            if (userEntity != null)
             {
-                _dbContext.Users.Remove(user);
+                _dbContext.Users.Remove(userEntity);
                 await _dbContext.SaveChangesAsync();
             }
+            else
+            {
+                throw new KeyNotFoundException($"User with Id {userId} not found.");
+            }
+        }
+
+        // Получение пользователя по ID
+        public async Task<User> GetUserByIdAsync(int userId)
+        {
+            var userEntity = await _dbContext.Users.FindAsync(userId);
+            return userEntity == null ? null : new User(userEntity.Id, userEntity.Username, userEntity.Password);
         }
     }
-
-
 }

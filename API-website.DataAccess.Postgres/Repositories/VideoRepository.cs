@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using API_website.DataAccess.Postgres.Repositories;
+using API_website.Application.Interfaces.Repositories;
+using API_website.Core.Models;
 using API_website.DataAccess.Postgres.Entities;
 
 namespace API_website.DataAccess.Postgres.Repositories
@@ -14,7 +15,13 @@ namespace API_website.DataAccess.Postgres.Repositories
 
         public async Task AddPathVideo(Video video)
         {
-            await _dbContext.Videos.AddAsync(video);
+            var videoEntutes = new VideoEntities
+            {
+                NameVideo = video.NameVideo,
+                PathVideo = video.PathVideo,
+                UserId = video.UserId,
+            };
+            await _dbContext.Videos.AddAsync(videoEntutes);
             await _dbContext.SaveChangesAsync();
         }
 

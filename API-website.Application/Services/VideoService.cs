@@ -1,11 +1,7 @@
-using System.IO;
-using System.Threading.Tasks;
+using API_website.Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
+using API_website.Core.Models;
 using Xabe.FFmpeg;
-using API_website.DataAccess.Postgres.Repositories;
-using API_website.DataAccess.Postgres.Entities;
-//using API_website.Application.Interfaces.Repository;
-
 public class VideoService
 {
     private readonly IVideoRepository _videoRepository; // переименовали поле
@@ -62,12 +58,8 @@ public class VideoService
 
         int userId = await _videoRepository.GetUserId(username);
 
-        var dbvideo = new Video
-        {
-            NameVideo = video.FileName,
-            PathVideo = filePath,
-            UserId = userId,
-        };
+        var dbvideo = new Video(video.FileName, filePath, userId);
+
         await _videoRepository.AddPathVideo(dbvideo);
 
         return filePath;
