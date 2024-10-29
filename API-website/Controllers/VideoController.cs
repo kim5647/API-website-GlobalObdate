@@ -1,19 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using System.Security.Claims;
-using System.Threading.Tasks;
+
 
 [ApiController]
 [Route("api/videos")]
 public class VideoController : ControllerBase
 {
     private readonly VideoService _videoService;
-    private readonly UserService _userService;
 
-    public VideoController(VideoService videoService, UserService userService)
+    public VideoController(VideoService videoService)
     {
         _videoService = videoService;
-        _userService = userService;
     }
 
     [HttpPost("upload")]
@@ -61,7 +57,7 @@ public class VideoController : ControllerBase
     }
 
     [HttpGet("{filename}")]
-    public async Task<IActionResult> GetVideo(string filename)
+    public IActionResult GetVideo(string filename)
     {
         var filePath = Path.Combine("G:/video", filename);
 
@@ -86,19 +82,7 @@ public class VideoController : ControllerBase
         }
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> RegisterUser([FromForm] string username, [FromForm] string password)
-    {
-        try
-        {
-            await _userService.RegisterUserAsync(username, password);
-            return Ok("User registered successfully.");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, "Internal server error: " + ex.Message);
-        }
-    }
+
     [HttpPost("check")]
     public IActionResult Check([FromForm] string Name)
     {

@@ -26,7 +26,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\API-website.Application\API-website.Application.csproj" />
+    <ProjectReference Include="..\API-website.Core\API-website.Core.csproj" />
     <ProjectReference Include="..\API-website.DataAccess.Postgres\API-website.DataAccess.Postgres.csproj" />
+    <ProjectReference Include="..\API-website.Infrastructure\API-website.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

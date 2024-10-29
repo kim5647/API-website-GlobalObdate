@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using API_website.Application.Interfaces.Repositories;
 using API_website.DataAccess.Postgres.Entities;
 using API_website.Core.Models;
+using AutoMapper;
 
 
 namespace API_website.DataAccess.Postgres.Repositories
@@ -9,10 +10,12 @@ namespace API_website.DataAccess.Postgres.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly DBContext _dbContext;
+        private readonly IMapper _mapping;
 
-        public UserRepository(DBContext dbContext)
+        public UserRepository(DBContext dbContext, IMapper mappingProfile)
         {
             _dbContext = dbContext;
+            _mapping = mappingProfile;
         }
 
         // ѕолучение всех пользователей с преобразованием в User
@@ -20,6 +23,15 @@ namespace API_website.DataAccess.Postgres.Repositories
         {
             var userEntities = await _dbContext.Users.ToListAsync();
             return userEntities.Select(e => new User(e.Id, e.Username, e.Password));
+        }
+        public async Task<User> GetUserAsUsername(string username)
+        {
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null) throw new Exception($"User with username '{username}' not found.");
+
+            return _mapping.Map<User>(user);
         }
 
         // —оздание нового пользовател€
@@ -30,11 +42,11 @@ namespace API_website.DataAccess.Postgres.Repositories
 
             try
             {
-                var userEntity = new UserEntities
-                {
-                    Username = user.Username,
-                    Password = user.Password
-                };
+                var existingUser = await GetUserAsUsername(user.Username);
+
+                if (user != existingUser) throw new Exception("User with username '{user.Username}' already exists."); 
+
+                var userEntity = _mapping.Map<UserEntities>(user);
 
                 await _dbContext.Users.AddAsync(userEntity);
                 await _dbContext.SaveChangesAsync();
