@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -11,7 +12,7 @@ public class VideoController : ControllerBase
     {
         _videoService = videoService;
     }
-
+    [Authorize]
     [HttpPost("upload")]
     public async Task<IActionResult> UploadAndTrimVideo(IFormFile video, [FromForm] string startTime, [FromForm] string endTime)
     {
@@ -37,7 +38,7 @@ public class VideoController : ControllerBase
             return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }
-
+    [Authorize]
     [HttpPost("save")]
     public async Task<IActionResult> SaveVideo(IFormFile video, [FromForm] string username)
     {
@@ -55,7 +56,7 @@ public class VideoController : ControllerBase
             return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }
-
+    [Authorize]
     [HttpGet("{filename}")]
     public IActionResult GetVideo(string filename)
     {
@@ -82,9 +83,22 @@ public class VideoController : ControllerBase
         }
     }
 
-
+    
     [HttpPost("check")]
     public IActionResult Check([FromForm] string Name)
+    {
+        try
+        {
+            return Ok(Name);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex);
+        }
+    }
+    [Authorize]
+    [HttpPost("check/login")]
+    public IActionResult CheckLogin([FromForm] string Name)
     {
         try
         {
