@@ -4,6 +4,6 @@
 namespace API_website.Application.Interfaces.Repositories;
 public interface IVideoRepository
 {
+    Task<Video> GetVideoByNameAsync(string nameVideo, int id);
     Task AddPathVideo(Video video);
-    Task<int> GetUserId(string userId);
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using API_website.Application.Interfaces.Repositories;
 using API_website.Core.Models;
 using API_website.DataAccess.Postgres.Entities;
+using API_website.DataAccess.Postgres.Mapper.UserProfile;
 using AutoMapper;
 
 namespace API_website.DataAccess.Postgres.Repositories
@@ -22,13 +23,30 @@ namespace API_website.DataAccess.Postgres.Repositories
             await _dbContext.Videos.AddAsync(videoEntutes);
             await _dbContext.SaveChangesAsync();
         }
-
-        public async Task<int> GetUserId(string username)
+        public async Task<Video> GetVideoByNameAsync(string nameVideo, int id)
         {
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (user == null) throw new ArgumentException("User not found.");
-            return user.Id;
+            var videos = await _dbContext.Videos
+                .Where(v => v.NameVideo.Contains(nameVideo))
+                .FirstOrDefaultAsync(v => v.UserId == id);
+
+            return _mapper.Map<Video>(videos);
         }
+
+
+        //public async Task<IEnumerable<Video>> GetAllAsync()
+        //{
+        //    var videos = await _dbContext.Videos
+        //    .Select(v => new Video // Изменено на `Video`
+        //    {
+        //        Id = v.Id,
+        //        NameVideo = v.NameVideo,
+        //        PathVideo = v.PathVideo,
+        //        UserId = v.UserId
+        //    }).ToListAsync();
+        //    return _mapper.Map<Video>(videos);
+        //}
+
+
     }
 }
 

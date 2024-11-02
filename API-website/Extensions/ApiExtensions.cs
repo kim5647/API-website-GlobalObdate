@@ -43,8 +43,6 @@ namespace API_website.Extensions
                     }
                 };
             });
-
-            services.AddAuthentication();
         }
     }
 }

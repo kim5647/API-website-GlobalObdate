@@ -16,6 +16,11 @@ public class UserService
 
     public async Task RegisterUserAsync(string username, string password)
     {
+        var existingUser = await _userRepository.GetUserAsUsername(username);
+
+        if (existingUser != null)
+            throw new Exception($"User with username '{username}' already exists.");
+
         var hashedPassword = _passwordHasher.Generate(password);
 
         var user = new User(username, hashedPassword);
@@ -26,12 +31,19 @@ public class UserService
     {
         var user = await _userRepository.GetUserAsUsername(username);
 
+        if (user == null)
+            throw new Exception($"Not User");
+
         var result = _passwordHasher.Verify(password, user.Password);
 
         if (result == false) throw new Exception("Not users");
 
         var token = _jwtProvider.GnerateToken(user);
 
-        return token;
+        return (token);
+    }
+    public async Task<User> GetUserId(int id)
+    {
+        return await _userRepository.GetUserByIdAsync(id);
     }
 }

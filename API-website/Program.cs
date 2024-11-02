@@ -1,11 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using API_website.Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.CookiePolicy;
+using API_website.DataAccess.Postgres.Mapper.UserProfile;
 using API_website.DataAccess.Postgres.Repositories;
+using AutoMapper;
 using System.Net;
 using API_website.Infrastructure;
 using API_website.DataAccess.Postgres.Entities;
 using API_website.Application.Interfaces.Auth;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Http.Features;
+using API_website.Extensions;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
@@ -20,14 +25,31 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
+// Увеличение максимального размера тела запроса
+builder.Services.Configure<KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = 500 * 1024 * 1024; // 500 MB
+    options.Limits.MaxRequestBufferSize = 500 * 1024 * 1024; // 500 MB
+});
+
+// Увеличение лимита для multipart-запросов
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 500 * 1024 * 1024; // 500 MB
+});
+
+builder.Services.AddApiAuthentication(builder.Configuration);
 
 // Настройка логирования
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 // Добавление контроллеров
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    });
 
 // Регистрация сервиса для работы с видео и пользователями
 builder.Services.AddScoped<VideoService>();
@@ -52,7 +74,7 @@ builder.WebHost.UseKestrel(options =>
     options.Listen(IPAddress.Loopback, 8080); // Установите IP и порт
 });
 
-// Авто мапер регестрация
+// Авто мапер регистрация
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
 var app = builder.Build();
@@ -70,14 +92,14 @@ app.UseCookiePolicy(new CookiePolicyOptions
     Secure = CookieSecurePolicy.Always
 });
 
+// Поддержка CORS для production
+app.UseCors("AllowSpecificOrigins");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Глобальная обработка ошибок
 app.UseExceptionHandler("/error");
-
-// Поддержка CORS для production
-app.UseCors("AllowSpecificOrigins");
 
 // Маршрутизация запросов на контроллеры
 app.MapControllers();

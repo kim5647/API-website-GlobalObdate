@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using API_website.DataAccess.Postgres.Mapper.UserProfile;
 using API_website.Application.Interfaces.Repositories;
 using API_website.DataAccess.Postgres.Entities;
 using API_website.Core.Models;
@@ -24,14 +25,12 @@ namespace API_website.DataAccess.Postgres.Repositories
             var userEntities = await _dbContext.Users.ToListAsync();
             return userEntities.Select(e => new User(e.Id, e.Username, e.Password));
         }
-        public async Task<User> GetUserAsUsername(string username)
+        public async Task<User?> GetUserAsUsername(string username)
         {
             var user = await _dbContext.Users
                 .FirstOrDefaultAsync(u => u.Username == username);
 
-            if (user == null) throw new Exception($"User with username '{username}' not found.");
-
-            return _mapping.Map<User>(user);
+            return user == null ? null : _mapping.Map<User>(user);
         }
 
         // Создание нового пользователя
@@ -42,10 +41,6 @@ namespace API_website.DataAccess.Postgres.Repositories
 
             try
             {
-                var existingUser = await GetUserAsUsername(user.Username);
-
-                if (user != existingUser) throw new Exception("User with username '{user.Username}' already exists."); 
-
                 var userEntity = _mapping.Map<UserEntities>(user);
 
                 await _dbContext.Users.AddAsync(userEntity);
@@ -94,7 +89,13 @@ namespace API_website.DataAccess.Postgres.Repositories
         public async Task<User> GetUserByIdAsync(int userId)
         {
             var userEntity = await _dbContext.Users.FindAsync(userId);
-            return userEntity == null ? null : new User(userEntity.Id, userEntity.Username, userEntity.Password);
+            return _mapping.Map<User>(userEntity);
+        }
+        public async Task<int> GetUserId(string username)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) throw new ArgumentException("User not found.");
+            return user.Id;
         }
     }
 }
