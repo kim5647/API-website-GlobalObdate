@@ -42,23 +42,29 @@ public class VideoController : ControllerBase
         }
     }
 
-
-    [Authorize]
-    [HttpPost("upload")]
-    public async Task<IActionResult> UploadAndTrimVideo(IFormFile video, [FromForm] string startTime, [FromForm] string endTime)
+    // PUT /api/videos/{videoName}/trim - обрезка видео по параметрам времени
+    [HttpPut("{videoName}/trim")]
+    public async Task<IActionResult> TrimVideo(string videoName, [FromForm] string startTime, [FromForm] string endTime, [FromForm] bool reverse, [FromForm] double slowdownFactor = 1.0)
     {
         try
         {
-            var trimmedFilePath = await _videoService.TrimVideoAsync(video, startTime, endTime);
-            var fileResult = await System.IO.File.ReadAllBytesAsync(trimmedFilePath);
+            // Получаем обрезанное видео с помощью сервиса
+            var result = await _videoService.TrimVideoAsync(videoName, startTime, endTime, reverse, slowdownFactor);
 
-            var fileStream = new MemoryStream(fileResult);
-            var contentType = "video/mp4";
-            var fileName = $"trimmed_{Path.GetFileName(video.FileName)}";
+            if (string.IsNullOrEmpty(result))
+            {
+                return NotFound("Video not found or failed to process.");
+            }
 
-            System.IO.File.Delete(trimmedFilePath);
+            // Проверка на существование файла перед открытием
+            if (!System.IO.File.Exists(result))
+            {
+                return StatusCode(500, "Trimmed video file was not created.");
+            }
 
-            return File(fileStream, contentType, fileName);
+            // Открываем файл и передаем его в ответе
+            var fileStream = new FileStream(result, FileMode.Open, FileAccess.Read);
+            return File(fileStream, "video/mp4", Path.GetFileName(result));
         }
         catch (ArgumentException ex)
         {
@@ -66,12 +72,15 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Internal server error: " + ex.Message);
+            // Добавляем более подробную информацию об ошибке для отладки
+            return StatusCode(500, $"Internal server error: {ex.Message} - {ex.StackTrace}");
         }
     }
+
+
     [Authorize]
     [HttpPost("save")]
-    public async Task<IActionResult> SaveVideo(IFormFile video, [FromForm] string username)
+    public async Task<IActionResult> SaveVideo(IFormFile video)
     {
         try
         {

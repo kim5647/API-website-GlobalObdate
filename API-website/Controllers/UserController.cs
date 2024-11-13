@@ -44,7 +44,7 @@ public class UserController : Controller
 
             Response.Cookies.Append("sex-bober", token);
 
-            return Ok("User registered successfully.");
+            return Ok(token);
         }
         catch (Exception ex)
         {
@@ -52,14 +52,23 @@ public class UserController : Controller
         }
     }
     [HttpGet("hello")]
-    public IActionResult Hellow()
+    public async Task<IActionResult> Hellow()
     {
-        return Ok("hellow word");
+        string username = "folthen";
+        string password = "sex338";
+
+        var token = await _userService.Login(username, password);
+
+        return Ok("Куки в скобочках пошел нахуй: " + token);
     }
     [HttpGet("get-userid")]
     public IActionResult GetUserIdFromToken()
     {
         var userIdClaim = User.FindFirst("userid");
+        if (userIdClaim == null)
+        {
+            return BadRequest("User ID claim is missing in the token.");
+        }
         return Ok(userIdClaim.Value);
     }
 }

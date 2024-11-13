@@ -6,4 +6,5 @@ public interface IVideoRepository
 {
     Task<Video> GetVideoByNameAsync(string nameVideo, int id);
     Task AddPathVideo(Video video);
+    Task<string> GetPathVideo(string pathVideo);
 }

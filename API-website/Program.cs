@@ -3,7 +3,6 @@ using API_website.Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.CookiePolicy;
 using API_website.DataAccess.Postgres.Mapper.UserProfile;
 using API_website.DataAccess.Postgres.Repositories;
-using AutoMapper;
 using System.Net;
 using API_website.Infrastructure;
 using API_website.DataAccess.Postgres.Entities;
@@ -15,15 +14,17 @@ using API_website.Extensions;
 var builder = WebApplication.CreateSlimBuilder(args);
 
 // Настройка CORS для определенных источников (например, для production)
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigins", builder =>
-    {
-        builder.WithOrigins("https://your-allowed-origin.com")
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
-});
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowAllOrigins", builder =>
+//    {
+//        builder.WithOrigins("https://26.234.86.94") // Укажите IP-адрес сервера
+//               .AllowAnyMethod()
+//               .AllowAnyHeader()
+//               .AllowCredentials();
+//    });
+//});
+
 
 // Увеличение максимального размера тела запроса
 builder.Services.Configure<KestrelServerOptions>(options =>
@@ -71,7 +72,10 @@ builder.Services.AddDbContext<DBContext>(options =>
 // Настройка Kestrel для использования определенного IP-адреса и порта
 builder.WebHost.UseKestrel(options =>
 {
-    options.Listen(IPAddress.Loopback, 8080); // Установите IP и порт
+    options.Listen(IPAddress.Parse("26.234.86.94"), 8080, ListenOptions =>
+    {
+        //ListenOptions.UseHttps("", "");
+    }); // Установите IP и порт
 });
 
 // Авто мапер регистрация
@@ -85,21 +89,24 @@ using (var scope = app.Services.CreateScope())
     dbContext.Database.Migrate(); // Применяет миграции и создает базу данных
 }
 
-app.UseCookiePolicy(new CookiePolicyOptions
-{
-    MinimumSameSitePolicy = SameSiteMode.Strict,
-    HttpOnly = HttpOnlyPolicy.Always,
-    Secure = CookieSecurePolicy.Always
-});
+//app.UseCookiePolicy(new CookiePolicyOptions
+//{
+//    MinimumSameSitePolicy = SameSiteMode.None, // Для кросс-доменной передачи Cookies
+//    HttpOnly = HttpOnlyPolicy.Always,
+//    Secure = CookieSecurePolicy.Always // Обязательно для SameSite=None
+//});
 
 // Поддержка CORS для production
-app.UseCors("AllowSpecificOrigins");
+//app.UseCors("AllowAllOrigins");
+//app.UseAuthentication();
+//app.UseAuthorization();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// добавляет страницу отладчика, показывающую детали ошибки
+app.UseDeveloperExceptionPage();
+
 
 // Глобальная обработка ошибок
-app.UseExceptionHandler("/error");
+//app.UseExceptionHandler("/error");
 
 // Маршрутизация запросов на контроллеры
 app.MapControllers();

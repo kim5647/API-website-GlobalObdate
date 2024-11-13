@@ -16,7 +16,11 @@ namespace API_website.DataAccess.Postgres.Repositories
             _dbContext = dbContext;
             _mapper = mapper;
         }
-
+        public async Task<string> GetPathVideo(string pathVideo)
+        {
+            var video = await _dbContext.Videos.FirstAsync(v => v.NameVideo == pathVideo);
+            return video.PathVideo;
+        }
         public async Task AddPathVideo(Video video)
         {
             var videoEntutes = _mapper.Map<VideoEntities>(video);
