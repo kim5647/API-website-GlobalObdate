@@ -136,8 +136,8 @@ public class VideoController : ControllerBase
     //    }
     //}
     [Authorize]
-    [HttpGet("GetVideo")]
-    public async Task<IActionResult> GetVideo([FromForm] string nameVideo)
+    [HttpGet("GetVideo/{nameVideo}")]
+    public async Task<IActionResult> GetVideo(string nameVideo)
     {
         try
         {
