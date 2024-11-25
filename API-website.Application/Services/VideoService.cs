@@ -12,22 +12,14 @@ public class VideoService
         _videoRepository = videoRepository; // инициализация с корректным именем
         _userRepository = userRepository;
     }
-    public async Task<string> TrimVideoAsync(string video, string startTime, string endTime) =>
-        await TrimVideoAsync(video, startTime, endTime, reverse: false, slowdownFactor: 1.0);
-
-    // Перегруженная версия для обрезки с возможностью замедления
-    public async Task<string> TrimVideoAsync(string video, string startTime, string endTime, double slowdownFactor) => 
-        await TrimVideoAsync(video, startTime, endTime, reverse: false, slowdownFactor: slowdownFactor);
-
-    // Перегруженная версия для обрезки с реверсией
-    public async Task<string> TrimVideoAsync(string video, string startTime, string endTime, bool reverse) =>
-        await TrimVideoAsync(video, startTime, endTime, reverse: reverse, slowdownFactor: 1.0);
-
     // Основной метод с полной функциональностью
-    public async Task<string> TrimVideoAsync(string video, string startTime, string endTime, bool reverse, double slowdownFactor)
+    public async Task<string> TrimVideoAsync(OptionsFfmpeg optionsFfmpeg)
     {
         // Получаем путь к видео
-        string pathVideo = await _videoRepository.GetPathVideo(video);
+        string pathVideo = await _videoRepository.GetPathVideo(optionsFfmpeg.VideoName);
+
+        var startTime = optionsFfmpeg.StartTime;
+        var endTime = optionsFfmpeg.EndTime;
 
         if (string.IsNullOrEmpty(startTime) || string.IsNullOrEmpty(endTime))
         {
@@ -44,24 +36,7 @@ public class VideoService
                 .AddParameter($"-ss {startTime}")           // Время начала
                 .AddParameter($"-to {endTime}");            // Время конца
 
-            // Добавляем фильтр реверсии для видео и аудио, если включен reverse
-            if (reverse)
-            {
-                conversion.AddParameter("-vf reverse")      // Реверс видео
-                          .AddParameter("-af areverse");    // Реверс аудио
-            }
-
-            if (slowdownFactor != 1.0)
-            {
-                // Временно не работают
-                //conversion.AddParameter($"-filter:v setpts={1.0 / 2}*PTS")
-                //          .AddParameter($"-filter:a atempo={2}");
-
-            }
-            else
-            {
-                conversion.AddParameter("-c copy");
-            }
+            conversion.AddParameter("-c copy");
 
             // Указываем путь к выходному файлу и разрешаем перезапись
             conversion.SetOutput(trimmedFilePath)
@@ -78,8 +53,58 @@ public class VideoService
         }
     }
 
+    public async Task<string> ReverseVideoAsync(OptionsFfmpeg optionsFfmpeg)
+    {
+        // Получаем путь к видео
+        string pathVideo = await _videoRepository.GetPathVideo(optionsFfmpeg.VideoName);
 
+        // Создаем временный файл для обрезанного видео
+        var trimmedFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".mp4");
 
+        try
+        {
+            var conversion = FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{pathVideo}\"")        // Входной файл
+                .AddParameter($"-vf reverse")           // Время начала
+                .AddParameter($"-af areverse");            // Время конца
+
+            // Указываем путь к выходному файлу и разрешаем перезапись
+            conversion.SetOutput(trimmedFilePath)
+                .SetOverwriteOutput(true);
+
+            // Запускаем конвертацию
+            await conversion.Start();
+
+            return trimmedFilePath;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Failed to trim the video.", ex);
+        }
+    }
+
+    public async Task<string> SpeedVideoAsync(OptionsFfmpeg optionsFfmpeg)
+    {
+        // Получаем путь к видео
+        string pathVideo = await _videoRepository.GetPathVideo(optionsFfmpeg.VideoName);
+
+        // Создаем временный файл для обрезанного видео
+        var trimmedFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".mp4");
+
+        var conversion = FFmpeg.Conversions.New()
+            .AddParameter($"-i \"{pathVideo}\"") // Входной файл
+            .AddParameter($"-vf \"setpts=1*PTS\"") // Видеофильтр (замедление)
+            .AddParameter($"-af \"atempo={0.5}\""); // Аудиофильтр для замедления аудио
+
+        // Указываем путь к выходному файлу и разрешаем перезапись
+        conversion.SetOutput(trimmedFilePath)
+            .SetOverwriteOutput(true);
+
+        // Запускаем конвертацию
+        await conversion.Start();
+
+        return trimmedFilePath;
+    }
 
     public async Task<FileStream> GetVideoFileAsync(string nameVideo, int id)
     {

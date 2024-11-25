@@ -1,3 +1,4 @@
+using API_website.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IO.Compression;
@@ -48,8 +49,18 @@ public class VideoController : ControllerBase
     {
         try
         {
+
+            OptionsFfmpeg optionsFfmpeg = new OptionsFfmpeg
+            {
+                VideoName = videoName,
+                StartTime = startTime,
+                EndTime = endTime,
+                Revers = reverse,
+                SlowdownFactor = slowdownFactor
+            };
+
             // Получаем обрезанное видео с помощью сервиса
-            var result = await _videoService.TrimVideoAsync(videoName, startTime, endTime, reverse, slowdownFactor);
+            var result = await _videoService.SpeedVideoAsync(optionsFfmpeg);
 
             if (string.IsNullOrEmpty(result))
             {
