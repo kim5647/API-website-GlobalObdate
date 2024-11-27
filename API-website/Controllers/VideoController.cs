@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IO.Compression;
 
-
+[Authorize]
 [ApiController]
 [Route("api/videos")]
 public class VideoController : ControllerBase
@@ -16,66 +16,59 @@ public class VideoController : ControllerBase
     }
 
 
-    private const string FolderPath = @"G:\Downloads\EZDrummer";
-    private const string ZipFilePath = @"G:\Downloads\EZDrummer.zip";
+    //private const string FolderPath = @"G:\Downloads\EZDrummer";
+    //private const string ZipFilePath = @"G:\Downloads\EZDrummer.zip";
 
-    [HttpGet("EZDrummer")]
-    public IActionResult DownloadFolder()
+    //[HttpGet("EZDrummer")]
+    //public IActionResult DownloadFolder()
+    //{
+    //    try
+    //    {
+    //        // Проверка, существует ли ZIP-архив, и создание, если его нет
+    //        if (!System.IO.File.Exists(ZipFilePath))
+    //        {
+    //            ZipFile.CreateFromDirectory(FolderPath, ZipFilePath);
+    //        }
+
+    //        // Потоковая передача файла напрямую из файловой системы
+    //        var fileStream = new FileStream(ZipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+    //        var contentType = "application/zip";
+    //        var fileName = "EZDrummer.zip";
+
+    //        return File(fileStream, contentType, fileName, enableRangeProcessing: true);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return StatusCode(500, "Internal server error: " + ex.Message);
+    //    }
+    //}
+    [Authorize]
+    [HttpPut("{videoName}/revers")]
+    public async Task<IActionResult> ReversVideo(string videoName, [FromForm] bool reverse)
     {
         try
         {
-            // Проверка, существует ли ZIP-архив, и создание, если его нет
-            if (!System.IO.File.Exists(ZipFilePath))
+
+            var useridClaim = User.FindFirst("userid");
+
+            if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
             {
-                ZipFile.CreateFromDirectory(FolderPath, ZipFilePath);
+                return StatusCode(402, "Not jwt token");
             }
-
-            // Потоковая передача файла напрямую из файловой системы
-            var fileStream = new FileStream(ZipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var contentType = "application/zip";
-            var fileName = "EZDrummer.zip";
-
-            return File(fileStream, contentType, fileName, enableRangeProcessing: true);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, "Internal server error: " + ex.Message);
-        }
-    }
-
-    // PUT /api/videos/{videoName}/trim - обрезка видео по параметрам времени
-    [HttpPut("{videoName}/trim")]
-    public async Task<IActionResult> TrimVideo(string videoName, [FromForm] string startTime, [FromForm] string endTime, [FromForm] bool reverse, [FromForm] double slowdownFactor = 1.0)
-    {
-        try
-        {
 
             OptionsFfmpeg optionsFfmpeg = new OptionsFfmpeg
             {
                 VideoName = videoName,
-                StartTime = startTime,
-                EndTime = endTime,
+                UserIdClaim = int.Parse(useridClaim.Value),
                 Revers = reverse,
-                SlowdownFactor = slowdownFactor
             };
 
-            // Получаем обрезанное видео с помощью сервиса
-            var result = await _videoService.SpeedVideoAsync(optionsFfmpeg);
-
-            if (string.IsNullOrEmpty(result))
+            if (optionsFfmpeg.Revers == true)
             {
-                return NotFound("Video not found or failed to process.");
+                await _videoService.ReverseVideoAsync(optionsFfmpeg);
             }
 
-            // Проверка на существование файла перед открытием
-            if (!System.IO.File.Exists(result))
-            {
-                return StatusCode(500, "Trimmed video file was not created.");
-            }
-
-            // Открываем файл и передаем его в ответе
-            var fileStream = new FileStream(result, FileMode.Open, FileAccess.Read);
-            return File(fileStream, "video/mp4", Path.GetFileName(result));
+            return Ok("File save");
         }
         catch (ArgumentException ex)
         {
@@ -88,10 +81,100 @@ public class VideoController : ControllerBase
         }
     }
 
-
     [Authorize]
+    [HttpPut("{videoName}/adjust")]
+    public async Task<IActionResult> AdjustSpeedVideoAsync(string videoName, [FromForm] double slowdownFactor)
+    {
+        try
+        {
+            string result = "";
+
+            var useridClaim = User.FindFirst("userid");
+
+            if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
+            {
+                return StatusCode(402, "Not jwt token");
+            }
+
+            OptionsFfmpeg optionsFfmpeg = new OptionsFfmpeg
+            {
+                VideoName = videoName,
+                UserIdClaim = int.Parse(useridClaim.Value),
+                SlowdownFactor = slowdownFactor
+            };
+            
+            if (slowdownFactor > 1)
+            {
+                result = await _videoService.SpeedVideoAsync(optionsFfmpeg);
+            }
+            else if(slowdownFactor < 1)
+            {
+                result = await _videoService.SlowingVideoAsync(optionsFfmpeg);
+            }
+
+            if (result == null)
+            {
+                StatusCode(500, "Not file");
+            }
+
+            return Ok("File save");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            // Добавляем более подробную информацию об ошибке для отладки
+            return StatusCode(500, $"Internal server error: {ex.Message} - {ex.StackTrace}");
+        }
+    }
+
+    // PUT /api/videos/{videoName}/trim - обрезка видео по параметрам времени
+    [Authorize]
+    [HttpPut("{videoName}/trim")]
+    public async Task<IActionResult> TrimVideo(string videoName, [FromForm] string startTime, [FromForm] string endTime)
+    {
+        try
+        {
+            var useridClaim = User.FindFirst("userid");
+
+            if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
+            {
+                return StatusCode(402, "Not jwt token");
+            }
+
+            OptionsFfmpeg optionsFfmpeg = new OptionsFfmpeg
+            {
+                VideoName = videoName,
+                UserIdClaim = int.Parse(useridClaim.Value),
+                StartTime = startTime,
+                EndTime = endTime
+            };
+
+            // Получаем обрезанное видео с помощью сервиса
+            var result = await _videoService.TrimVideoAsync(optionsFfmpeg);
+
+            if (result == null)
+            {
+                StatusCode(500, "Not file");
+            }
+
+            return Ok("File save");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            // Добавляем более подробную информацию об ошибке для отладки
+            return StatusCode(500, $"Internal server error: {ex.Message} - {ex.StackTrace}");
+        }
+    }
+
     [HttpPost("save")]
-    public async Task<IActionResult> SaveVideo(IFormFile video)
+    public async Task<IActionResult> SaveVideo([FromForm] IFormFile video)
     {
         try
         {
@@ -174,12 +257,12 @@ public class VideoController : ControllerBase
 
 
 
-    [HttpPost("check")]
-    public IActionResult Check([FromForm] string Name)
+    [HttpGet("check/{name}")]
+    public IActionResult Check(string name)
     {
         try
         {
-            return Ok(Name);
+            return Ok(name);
         }
         catch (Exception ex)
         {

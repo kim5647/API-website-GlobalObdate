@@ -16,9 +16,30 @@ namespace API_website.DataAccess.Postgres.Repositories
             _dbContext = dbContext;
             _mapper = mapper;
         }
-        public async Task<string> GetPathVideo(string pathVideo)
+        public string GetPathVideo(string pathVideo, int id)
         {
-            var video = await _dbContext.Videos.FirstAsync(v => v.NameVideo == pathVideo);
+            var video = _dbContext.Videos
+                .Where(v => v.NameVideo == pathVideo && v.UserId == id)
+                .SingleOrDefault();
+
+            if (video == null)
+            {
+                throw new InvalidOperationException($"Video with Path='{pathVideo}' and Id={id} not found.");
+            }
+
+            return video.PathVideo;
+        }
+        public async Task<string> GetPathVideoAsync(string pathVideo, int id)
+        {
+            var video = await _dbContext.Videos
+                .Where(v => v.NameVideo == pathVideo && v.UserId == id)
+                .SingleOrDefaultAsync();
+
+            if (video == null)
+            {
+                throw new InvalidOperationException($"Video with Path='{pathVideo}' and Id={id} not found.");
+            }
+
             return video.PathVideo;
         }
         public async Task AddPathVideo(Video video)
