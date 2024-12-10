@@ -14,35 +14,6 @@ public class VideoController : ControllerBase
     {
         _videoService = videoService;
     }
-
-
-    //private const string FolderPath = @"G:\Downloads\EZDrummer";
-    //private const string ZipFilePath = @"G:\Downloads\EZDrummer.zip";
-
-    //[HttpGet("EZDrummer")]
-    //public IActionResult DownloadFolder()
-    //{
-    //    try
-    //    {
-    //        // ѕроверка, существует ли ZIP-архив, и создание, если его нет
-    //        if (!System.IO.File.Exists(ZipFilePath))
-    //        {
-    //            ZipFile.CreateFromDirectory(FolderPath, ZipFilePath);
-    //        }
-
-    //        // ѕотокова€ передача файла напр€мую из файловой системы
-    //        var fileStream = new FileStream(ZipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-    //        var contentType = "application/zip";
-    //        var fileName = "EZDrummer.zip";
-
-    //        return File(fileStream, contentType, fileName, enableRangeProcessing: true);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return StatusCode(500, "Internal server error: " + ex.Message);
-    //    }
-    //}
-    [Authorize]
     [HttpPut("{videoName}/revers")]
     public async Task<IActionResult> ReversVideo(string videoName, [FromForm] bool reverse)
     {
@@ -80,8 +51,6 @@ public class VideoController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message} - {ex.StackTrace}");
         }
     }
-
-    [Authorize]
     [HttpPut("{videoName}/adjust")]
     public async Task<IActionResult> AdjustSpeedVideoAsync(string videoName, [FromForm] double slowdownFactor)
     {
@@ -102,12 +71,12 @@ public class VideoController : ControllerBase
                 UserIdClaim = int.Parse(useridClaim.Value),
                 SlowdownFactor = slowdownFactor
             };
-            
+
             if (slowdownFactor > 1)
             {
                 result = await _videoService.SpeedVideoAsync(optionsFfmpeg);
             }
-            else if(slowdownFactor < 1)
+            else if (slowdownFactor < 1)
             {
                 result = await _videoService.SlowingVideoAsync(optionsFfmpeg);
             }
@@ -130,8 +99,6 @@ public class VideoController : ControllerBase
         }
     }
 
-    // PUT /api/videos/{videoName}/trim - обрезка видео по параметрам времени
-    [Authorize]
     [HttpPut("{videoName}/trim")]
     public async Task<IActionResult> TrimVideo(string videoName, [FromForm] string startTime, [FromForm] string endTime)
     {
@@ -173,8 +140,8 @@ public class VideoController : ControllerBase
         }
     }
 
-    [HttpPost("save")]
-    public async Task<IActionResult> SaveVideo([FromForm] IFormFile video)
+    [HttpPost("{nameVideo}/save")]
+    public async Task<IActionResult> SaveVideo(string nameVideo, [FromForm] IFormFile video, [FromForm] string smile)
     {
         try
         {
@@ -182,17 +149,17 @@ public class VideoController : ControllerBase
 
             if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
             {
-                return StatusCode(402, "Not jwt token");
+                return StatusCode(402, "No JWT token");
             }
 
-            // ѕробуем разобрать значение userid как целое число
             if (!int.TryParse(useridClaim.Value, out int userId))
             {
-                return StatusCode(400, "Invalid user ID format in token");
+                return BadRequest("Invalid user ID format in token");
             }
 
-            var filePath = await _videoService.SaveVideoAsync(video, int.Parse(useridClaim.Value));
-            return Ok("Video saved successfully");
+            var filePath = await _videoService.SaveVideoAsync(video, nameVideo, smile, userId);
+
+            return Ok("Video saved successfully at path: " + filePath);
         }
         catch (ArgumentException ex)
         {
@@ -203,22 +170,21 @@ public class VideoController : ControllerBase
             return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }
+    [HttpPut("{nameVideo}/addClip")]
+    public async Task<IActionResult> AddClipAsync(string nameVideo, [FromForm] IFormFile video, [FromForm] bool point)
+    {
+        var useridClaim = User.FindFirst("userid");
 
-    //[Authorize]
-    //[HttpGet("GetAllVideo")]
-    //public async Task<IActionResult> GetAllVideo()
-    //{
-    //    try
-    //    {
-    //        var videos = await _videoService.GetAllVideosAsync();
-    //        return Ok(videos);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return StatusCode(500, "Internal server error: " + ex.Message);
-    //    }
-    //}
-    [Authorize]
+        if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
+        {
+            return StatusCode(402, "No JWT token");
+        }
+
+        await _videoService.AddClipAsync(nameVideo, video, int.Parse(useridClaim.Value), point);
+
+        return Ok();
+    }
+
     [HttpGet("GetVideo/{nameVideo}")]
     public async Task<IActionResult> GetVideo(string nameVideo)
     {
@@ -255,31 +221,39 @@ public class VideoController : ControllerBase
         }
     }
 
-
-
-    [HttpGet("check/{name}")]
-    public IActionResult Check(string name)
+    [HttpGet("GetAllVideoInfo")]
+    public async Task<IActionResult> GetAllVideoInfo()
     {
-        try
+        var useridClaim = User.FindFirst("userid");
+
+        if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
         {
-            return Ok(name);
+            return StatusCode(402, "Not jwt token");
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex);
-        }
+
+        List<VideoInfo> values = await _videoService.GetAllVideo(int.Parse(useridClaim.Value));
+
+        return Ok(values);
     }
-    [Authorize]
-    [HttpPost("check/login")]
-    public IActionResult CheckLogin([FromForm] string Name)
+    [HttpDelete("DeleteVideo/{videoName}")]
+    public async Task<IActionResult> DeleteVideoAsync(string videoName)
     {
         try
         {
-            return Ok(Name);
+            var useridClaim = User.FindFirst("userid");
+
+            if (useridClaim == null || string.IsNullOrEmpty(useridClaim.Value))
+            {
+                return StatusCode(402, "No JWT token");
+            }
+
+            await _videoService.DeleteVideoAsync(videoName, int.Parse(useridClaim.Value));
+
+            return Ok("Delete video");
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ex);
+            return BadRequest(new { message = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 }

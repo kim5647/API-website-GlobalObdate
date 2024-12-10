@@ -10,6 +10,8 @@ public class VideoEntities
     [Required]
     public string NameVideo { get; set; } = string.Empty;
     [Required]
+    public string? Smile { get; set; } = string.Empty;
+    [Required]
     public string PathVideo { get; set; } = string.Empty;
     [Required]
     public int UserId { get; set; }

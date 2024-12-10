@@ -42,7 +42,7 @@ namespace API_website.DataAccess.Postgres.Repositories
 
             return video.PathVideo;
         }
-        public async Task AddPathVideo(Video video)
+        public async Task AddVideo(Video video)
         {
             var videoEntutes = _mapper.Map<VideoEntities>(video);
             await _dbContext.Videos.AddAsync(videoEntutes);
@@ -57,19 +57,26 @@ namespace API_website.DataAccess.Postgres.Repositories
             return _mapper.Map<Video>(videos);
         }
 
+        public async Task<List<Video>> GetNameVideo(int id)
+        {
+            List<VideoEntities> values = await _dbContext.Videos.Where(v => v.UserId == id).ToListAsync();
 
-        //public async Task<IEnumerable<Video>> GetAllAsync()
-        //{
-        //    var videos = await _dbContext.Videos
-        //    .Select(v => new Video // Изменено на `Video`
-        //    {
-        //        Id = v.Id,
-        //        NameVideo = v.NameVideo,
-        //        PathVideo = v.PathVideo,
-        //        UserId = v.UserId
-        //    }).ToListAsync();
-        //    return _mapper.Map<Video>(videos);
-        //}
+            return _mapper.Map<List<Video>>(values);
+        }
+        public async Task DeleteVideoAsync(string videoName, int idUser)
+        {
+            var videoEntity = await _dbContext.Videos
+                .FirstOrDefaultAsync(v => v.NameVideo == videoName && v.UserId == idUser);
+
+            if (videoEntity == null)
+            {
+                throw new Exception($"Video '{videoName}' not found for user {idUser}.");
+            }
+
+            _dbContext.Videos.Remove(videoEntity);
+
+            await _dbContext.SaveChangesAsync();
+        }
 
 
     }

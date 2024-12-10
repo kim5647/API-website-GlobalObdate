@@ -1,21 +1,25 @@
-using API_website.Application.Interfaces.Repositories;
+п»їusing API_website.Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
 using API_website.Core.Models;
 using Xabe.FFmpeg;
 using System.IO;
+using System.Net;
 using System.Globalization;
+using System.Drawing;
+using Xabe.FFmpeg.Exceptions;
 public class VideoService
 {
-    private readonly IVideoRepository _videoRepository; // переименовали поле
+    private const string PathVideo = "G:/video/";
+    private readonly IVideoRepository _videoRepository; // РїРµСЂРµРёРјРµРЅРѕРІР°Р»Рё РїРѕР»Рµ
     private readonly IUserRepository _userRepository;
     public VideoService(IVideoRepository videoRepository, IUserRepository userRepository)
     {
-        _videoRepository = videoRepository; // инициализация с корректным именем
+        _videoRepository = videoRepository; // РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃ РєРѕСЂСЂРµРєС‚РЅС‹Рј РёРјРµРЅРµРј
         _userRepository = userRepository;
     }
     public async Task<string> TrimVideoAsync(OptionsFfmpeg optionsFfmpeg)
     {
-        // Получаем путь к видео
+        // РџРѕР»СѓС‡Р°РµРј РїСѓС‚СЊ Рє РІРёРґРµРѕ
         string pathVideo = _videoRepository.GetPathVideo(optionsFfmpeg.VideoName, optionsFfmpeg.UserIdClaim);
 
         var startTime = optionsFfmpeg.StartTime;
@@ -26,45 +30,45 @@ public class VideoService
             throw new ArgumentException("Start time and end time must be provided.");
         }
 
-        // Проверяем, что файл существует
+        // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ С„Р°Р№Р» СЃСѓС‰РµСЃС‚РІСѓРµС‚
         if (!File.Exists(pathVideo))
         {
             throw new FileNotFoundException($"The input video file '{pathVideo}' does not exist.");
         }
 
-        // Формируем путь для временного файла
+        // Р¤РѕСЂРјРёСЂСѓРµРј РїСѓС‚СЊ РґР»СЏ РІСЂРµРјРµРЅРЅРѕРіРѕ С„Р°Р№Р»Р°
         var directory = Path.GetDirectoryName(pathVideo);
         if (directory == null) throw new FileNotFoundException($"Not directory");
         var tempFilePath = Path.Combine(directory, "temp_" + Path.GetFileName(pathVideo));
 
         try
         {
-            // Настраиваем FFmpeg
+            // РќР°СЃС‚СЂР°РёРІР°РµРј FFmpeg
             var conversion = FFmpeg.Conversions.New()
-                .AddParameter($"-i \"{pathVideo}\"")  // Входной файл
-                .AddParameter($"-ss {startTime}")    // Время начала
-                .AddParameter($"-to {endTime}")      // Время окончания
-                .AddParameter("-c copy")            // Копирование без перекодирования
-                .SetOutput(tempFilePath)            // Временный файл для обработки
-                .SetOverwriteOutput(true);          // Разрешаем перезапись
+                .AddParameter($"-i \"{pathVideo}\"")  // Р’С…РѕРґРЅРѕР№ С„Р°Р№Р»
+                .AddParameter($"-ss {startTime}")    // Р’СЂРµРјСЏ РЅР°С‡Р°Р»Р°
+                .AddParameter($"-to {endTime}")      // Р’СЂРµРјСЏ РѕРєРѕРЅС‡Р°РЅРёСЏ
+                .AddParameter("-c copy")            // РљРѕРїРёСЂРѕРІР°РЅРёРµ Р±РµР· РїРµСЂРµРєРѕРґРёСЂРѕРІР°РЅРёСЏ
+                .SetOutput(tempFilePath)            // Р’СЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё
+                .SetOverwriteOutput(true);          // Р Р°Р·СЂРµС€Р°РµРј РїРµСЂРµР·Р°РїРёСЃСЊ
 
-            // Асинхронно запускаем конвертацию
+            // РђСЃРёРЅС…СЂРѕРЅРЅРѕ Р·Р°РїСѓСЃРєР°РµРј РєРѕРЅРІРµСЂС‚Р°С†РёСЋ
             await conversion.Start();
 
-            // Удаляем оригинальный файл
+            // РЈРґР°Р»СЏРµРј РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ С„Р°Р№Р»
             if (File.Exists(pathVideo))
             {
                 File.Delete(pathVideo);
             }
 
-            // Переименовываем временный файл в оригинальное имя
+            // РџРµСЂРµРёРјРµРЅРѕРІС‹РІР°РµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РІ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРµ РёРјСЏ
             File.Move(tempFilePath, pathVideo);
 
-            return pathVideo; // Возвращаем путь к обновлённому файлу
+            return pathVideo; // Р’РѕР·РІСЂР°С‰Р°РµРј РїСѓС‚СЊ Рє РѕР±РЅРѕРІР»С‘РЅРЅРѕРјСѓ С„Р°Р№Р»Сѓ
         }
         catch (Exception ex)
         {
-            // Удаляем временный файл в случае ошибки
+            // РЈРґР°Р»СЏРµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РІ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё
             if (File.Exists(tempFilePath))
             {
                 File.Delete(tempFilePath);
@@ -74,48 +78,48 @@ public class VideoService
         }
     }
 
-    // Основной метод с полной функциональностью
+    // РћСЃРЅРѕРІРЅРѕР№ РјРµС‚РѕРґ СЃ РїРѕР»РЅРѕР№ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕСЃС‚СЊСЋ
 
     public async Task<string> ReverseVideoAsync(OptionsFfmpeg optionsFfmpeg)
     {
-        // Получаем путь к видео
+        // РџРѕР»СѓС‡Р°РµРј РїСѓС‚СЊ Рє РІРёРґРµРѕ
         string pathVideo = _videoRepository.GetPathVideo(optionsFfmpeg.VideoName, optionsFfmpeg.UserIdClaim);
 
         if (string.IsNullOrEmpty(pathVideo) || !File.Exists(pathVideo)) 
             throw new FileNotFoundException($"The input video file '{pathVideo}' does not exist.");
 
-        // Формируем путь для временного файла
+        // Р¤РѕСЂРјРёСЂСѓРµРј РїСѓС‚СЊ РґР»СЏ РІСЂРµРјРµРЅРЅРѕРіРѕ С„Р°Р№Р»Р°
         var directory = Path.GetDirectoryName(pathVideo);
         if (directory == null) throw new FileNotFoundException($"Not directory");
         var tempFilePath = Path.Combine(directory, "temp_" + Path.GetFileName(pathVideo));
 
         try
         {
-            // Настраиваем FFmpeg для реверса видео и аудио
+            // РќР°СЃС‚СЂР°РёРІР°РµРј FFmpeg РґР»СЏ СЂРµРІРµСЂСЃР° РІРёРґРµРѕ Рё Р°СѓРґРёРѕ
             var conversion = FFmpeg.Conversions.New()
-                .AddParameter($"-i \"{pathVideo}\"")    // Входной файл
-                .AddParameter("-vf reverse")           // Реверс видео
-                .AddParameter("-af areverse")          // Реверс аудио
-                .SetOutput(tempFilePath)               // Временный выходной файл
-                .SetOverwriteOutput(true);             // Разрешаем перезапись
+                .AddParameter($"-i \"{pathVideo}\"")    // Р’С…РѕРґРЅРѕР№ С„Р°Р№Р»
+                .AddParameter("-vf reverse")           // Р РµРІРµСЂСЃ РІРёРґРµРѕ
+                .AddParameter("-af areverse")          // Р РµРІРµСЂСЃ Р°СѓРґРёРѕ
+                .SetOutput(tempFilePath)               // Р’СЂРµРјРµРЅРЅС‹Р№ РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»
+                .SetOverwriteOutput(true);             // Р Р°Р·СЂРµС€Р°РµРј РїРµСЂРµР·Р°РїРёСЃСЊ
 
-            // Асинхронно запускаем конвертацию
+            // РђСЃРёРЅС…СЂРѕРЅРЅРѕ Р·Р°РїСѓСЃРєР°РµРј РєРѕРЅРІРµСЂС‚Р°С†РёСЋ
             await conversion.Start();
 
-            // Удаляем оригинальный файл
+            // РЈРґР°Р»СЏРµРј РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ С„Р°Р№Р»
             if (File.Exists(pathVideo))
             {
                 File.Delete(pathVideo);
             }
 
-            // Переименовываем временный файл в оригинальное имя
+            // РџРµСЂРµРёРјРµРЅРѕРІС‹РІР°РµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РІ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРµ РёРјСЏ
             File.Move(tempFilePath, pathVideo);
 
-            return pathVideo; // Возвращаем путь к обновлённому файлу
+            return pathVideo; // Р’РѕР·РІСЂР°С‰Р°РµРј РїСѓС‚СЊ Рє РѕР±РЅРѕРІР»С‘РЅРЅРѕРјСѓ С„Р°Р№Р»Сѓ
         }
         catch (Exception ex)
         {
-            // Удаляем временный файл в случае ошибки
+            // РЈРґР°Р»СЏРµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РІ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё
             if (File.Exists(tempFilePath))
             {
                 File.Delete(tempFilePath);
@@ -129,73 +133,73 @@ public class VideoService
 
     public async Task<string> SpeedVideoAsync(OptionsFfmpeg optionsFfmpeg)
     {
-        // Получаем путь к видео
+        // РџРѕР»СѓС‡Р°РµРј РїСѓС‚СЊ Рє РІРёРґРµРѕ
         string pathVideo = await _videoRepository.GetPathVideoAsync(optionsFfmpeg.VideoName, optionsFfmpeg.UserIdClaim);
 
         var directory = Path.GetDirectoryName(pathVideo)
                         ?? throw new DirectoryNotFoundException("Could not determine the directory of the video.");
-        // Создаем временный файл для обрезанного видео
+        // РЎРѕР·РґР°РµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РґР»СЏ РѕР±СЂРµР·Р°РЅРЅРѕРіРѕ РІРёРґРµРѕ
         var tempFilePath = Path.Combine(directory, "temp_" + Path.GetFileName(pathVideo));
 
         var setptsValue = (1 / optionsFfmpeg.SlowdownFactor).ToString(CultureInfo.InvariantCulture);
         var atempoValue = optionsFfmpeg.SlowdownFactor.ToString(CultureInfo.InvariantCulture);
 
         var conversion = FFmpeg.Conversions.New()
-            .AddParameter($"-i \"{pathVideo}\"") // Входной файл
-            .AddParameter($"-vf \"setpts={setptsValue}*PTS\"") // Видеофильтр (замедление)
-            .AddParameter($"-af \"atempo={atempoValue}\"")     // Аудиофильтр (замедление)
-            .SetOutput(tempFilePath)                          // Временный файл
-            .SetOverwriteOutput(true);                        // Разрешаем перезапись
+            .AddParameter($"-i \"{pathVideo}\"") // Р’С…РѕРґРЅРѕР№ С„Р°Р№Р»
+            .AddParameter($"-vf \"setpts={setptsValue}*PTS\"") // Р’РёРґРµРѕС„РёР»СЊС‚СЂ (Р·Р°РјРµРґР»РµРЅРёРµ)
+            .AddParameter($"-af \"atempo={atempoValue}\"")     // РђСѓРґРёРѕС„РёР»СЊС‚СЂ (Р·Р°РјРµРґР»РµРЅРёРµ)
+            .SetOutput(tempFilePath)                          // Р’СЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р»
+            .SetOverwriteOutput(true);                        // Р Р°Р·СЂРµС€Р°РµРј РїРµСЂРµР·Р°РїРёСЃСЊ
 
-        // Запускаем конвертацию
+        // Р—Р°РїСѓСЃРєР°РµРј РєРѕРЅРІРµСЂС‚Р°С†РёСЋ
         await conversion.Start();
 
-        // Удаляем оригинальный файл
+        // РЈРґР°Р»СЏРµРј РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ С„Р°Р№Р»
         if (File.Exists(pathVideo))
         {
             File.Delete(pathVideo);
         }
 
-        // Переименовываем временный файл в оригинальное имя
+        // РџРµСЂРµРёРјРµРЅРѕРІС‹РІР°РµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РІ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРµ РёРјСЏ
         File.Move(tempFilePath, pathVideo);
 
         return pathVideo;
     }
     public async Task<string> SlowingVideoAsync(OptionsFfmpeg optionsFfmpeg)
     {
-        // Получаем путь к видео
+        // РџРѕР»СѓС‡Р°РµРј РїСѓС‚СЊ Рє РІРёРґРµРѕ
         string pathVideo = await _videoRepository.GetPathVideoAsync(optionsFfmpeg.VideoName, optionsFfmpeg.UserIdClaim);
 
         var directory = Path.GetDirectoryName(pathVideo)
                         ?? throw new DirectoryNotFoundException("Could not determine the directory of the video.");
-        // Создаем временный файл для обрезанного видео
+        // РЎРѕР·РґР°РµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РґР»СЏ РѕР±СЂРµР·Р°РЅРЅРѕРіРѕ РІРёРґРµРѕ
         var tempFilePath = Path.Combine(directory, "temp_" + Path.GetFileName(pathVideo));
 
         var slowdownFactor = optionsFfmpeg.SlowdownFactor;
 
-        // Значение для фильтра setpts
+        // Р—РЅР°С‡РµРЅРёРµ РґР»СЏ С„РёР»СЊС‚СЂР° setpts
         var setptsValue = (1 / slowdownFactor).ToString(CultureInfo.InvariantCulture);
 
-        // Генерация фильтра atempo
+        // Р“РµРЅРµСЂР°С†РёСЏ С„РёР»СЊС‚СЂР° atempo
         var atempoFilter = GenerateAtempoFilter(slowdownFactor);
 
         var conversion = FFmpeg.Conversions.New()
-            .AddParameter($"-i \"{pathVideo}\"") // Входной файл
-            .AddParameter($"-vf \"setpts={setptsValue}*PTS\"") // Видеофильтр (замедление)
-            .AddParameter($"-af \"{atempoFilter}\"")          // Аудиофильтр (замедление)
-            .SetOutput(tempFilePath)                          // Временный файл
-            .SetOverwriteOutput(true);                        // Разрешаем перезапись                     // Разрешаем перезапись
+            .AddParameter($"-i \"{pathVideo}\"") // Р’С…РѕРґРЅРѕР№ С„Р°Р№Р»
+            .AddParameter($"-vf \"setpts={setptsValue}*PTS\"") // Р’РёРґРµРѕС„РёР»СЊС‚СЂ (Р·Р°РјРµРґР»РµРЅРёРµ)
+            .AddParameter($"-af \"{atempoFilter}\"")          // РђСѓРґРёРѕС„РёР»СЊС‚СЂ (Р·Р°РјРµРґР»РµРЅРёРµ)
+            .SetOutput(tempFilePath)                          // Р’СЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р»
+            .SetOverwriteOutput(true);                        // Р Р°Р·СЂРµС€Р°РµРј РїРµСЂРµР·Р°РїРёСЃСЊ                     // Р Р°Р·СЂРµС€Р°РµРј РїРµСЂРµР·Р°РїРёСЃСЊ
 
-        // Запускаем конвертацию
+        // Р—Р°РїСѓСЃРєР°РµРј РєРѕРЅРІРµСЂС‚Р°С†РёСЋ
         await conversion.Start();
 
-        // Удаляем оригинальный файл
+        // РЈРґР°Р»СЏРµРј РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ С„Р°Р№Р»
         if (File.Exists(pathVideo))
         {
             File.Delete(pathVideo);
         }
 
-        // Переименовываем временный файл в оригинальное имя
+        // РџРµСЂРµРёРјРµРЅРѕРІС‹РІР°РµРј РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РІ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРµ РёРјСЏ
         File.Move(tempFilePath, pathVideo);
 
         return pathVideo;
@@ -204,32 +208,32 @@ public class VideoService
     {
         var filters = new List<string>();
 
-        // Умножаем или делим, пока значение не окажется в диапазоне от 0.5 до 2.0
+        // РЈРјРЅРѕР¶Р°РµРј РёР»Рё РґРµР»РёРј, РїРѕРєР° Р·РЅР°С‡РµРЅРёРµ РЅРµ РѕРєР°Р¶РµС‚СЃСЏ РІ РґРёР°РїР°Р·РѕРЅРµ РѕС‚ 0.5 РґРѕ 2.0
         while (slowdownFactor < 0.5 || slowdownFactor > 2.0)
         {
             if (slowdownFactor < 0.5)
             {
                 filters.Add("atempo=0.5");
-                slowdownFactor *= 2; // Увеличиваем в 2 раза
+                slowdownFactor *= 2; // РЈРІРµР»РёС‡РёРІР°РµРј РІ 2 СЂР°Р·Р°
             }
             else if (slowdownFactor > 2.0)
             {
                 filters.Add("atempo=2.0");
-                slowdownFactor /= 2; // Уменьшаем в 2 раза
+                slowdownFactor /= 2; // РЈРјРµРЅСЊС€Р°РµРј РІ 2 СЂР°Р·Р°
             }
         }
 
-        // Добавляем финальный фильтр с допустимым значением
+        // Р”РѕР±Р°РІР»СЏРµРј С„РёРЅР°Р»СЊРЅС‹Р№ С„РёР»СЊС‚СЂ СЃ РґРѕРїСѓСЃС‚РёРјС‹Рј Р·РЅР°С‡РµРЅРёРµРј
         filters.Add($"atempo={slowdownFactor.ToString(CultureInfo.InvariantCulture)}");
 
-        // Объединяем фильтры
+        // РћР±СЉРµРґРёРЅСЏРµРј С„РёР»СЊС‚СЂС‹
         return string.Join(",", filters);
     }
 
 
     public async Task<FileStream> GetVideoFileAsync(string nameVideo, int id)
     {
-        var videos = await _videoRepository.GetVideoByNameAsync(nameVideo, id); // метод должен возвращать один объект Video
+        var videos = await _videoRepository.GetVideoByNameAsync(nameVideo, id); // РјРµС‚РѕРґ РґРѕР»Р¶РµРЅ РІРѕР·РІСЂР°С‰Р°С‚СЊ РѕРґРёРЅ РѕР±СЉРµРєС‚ Video
 
         if (videos == null || string.IsNullOrEmpty(videos.PathVideo))
         {
@@ -239,40 +243,205 @@ public class VideoService
         return new FileStream(videos.PathVideo, FileMode.Open, FileAccess.Read, FileShare.Read);
     }
 
-    //public async Task GetAllVideosAsync()
-    //{
-    //    var video = await _videoRepository.GetAllAsync();
-    //    return video;
-    //}
-    private const string PathVideo = "G:/video/";
-    public async Task<string> SaveVideoAsync(IFormFile video, int userid)
+    public async Task<string> SaveVideoAsync(IFormFile video, string nameVideo, string smile, int userid)
     {
-        var user = await _userRepository.GetUserByIdAsync(userid);
-
         if (video == null || video.Length <= 0)
         {
             throw new ArgumentException("Invalid video file.");
         }
 
-        string pathVideo = PathVideo + user.Username;
+        nameVideo = $"{nameVideo}.mp4";
+
+        Video existingVideo = await _videoRepository.GetVideoByNameAsync(nameVideo, userid);
+
+        if (existingVideo != null)
+        {
+            throw new ArgumentException("A video with the same name already exists.");
+        }
+
+        var user = await _userRepository.GetUserByIdAsync(userid);
+
+        string pathVideo = Path.Combine(PathVideo, user.Username);
 
         if (!Directory.Exists(pathVideo))
         {
             Directory.CreateDirectory(pathVideo);
         }
 
-        var filePath = Path.Combine(pathVideo, video.FileName);
+        var filePath = Path.Combine(pathVideo, nameVideo);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await video.CopyToAsync(stream);
         }
 
-        var dbvideo = new Video(video.FileName, filePath, userid);
-
-        await _videoRepository.AddPathVideo(dbvideo);
+        var dbvideo = new Video(nameVideo, smile, filePath, userid);
+        await _videoRepository.AddVideo(dbvideo);
 
         return filePath;
+    }
+
+    public async Task AddClipAsync(string nameVideo, IFormFile video, int idUser, bool point)
+    {
+        // РџРѕР»СѓС‡РёС‚СЊ РїСѓС‚СЊ Рє РїРµСЂРІРѕРјСѓ РІРёРґРµРѕ
+        string pathVideo = await _videoRepository.GetPathVideoAsync(nameVideo, idUser);
+
+        // РџСѓС‚СЊ РґР»СЏ РІСЂРµРјРµРЅРЅРѕРіРѕ СЃРѕС…СЂР°РЅРµРЅРёСЏ Р·Р°РіСЂСѓР¶РµРЅРЅРѕРіРѕ РІРёРґРµРѕ
+        string uploadedVideoPath = Path.Combine(Path.GetTempPath(), video.FileName);
+
+        // РЎРѕС…СЂР°РЅРёС‚СЊ РІРёРґРµРѕ РЅР° РґРёСЃРє
+        await using (var stream = new FileStream(uploadedVideoPath, FileMode.Create))
+        {
+            await video.CopyToAsync(stream);
+        }
+
+        // РџСЂРѕРІРµСЂРёС‚СЊ СЃСѓС‰РµСЃС‚РІРѕРІР°РЅРёРµ РїРµСЂРІРѕРіРѕ РІРёРґРµРѕ
+        if (!File.Exists(pathVideo))
+            throw new FileNotFoundException($"РџРµСЂРІРѕРµ РІРёРґРµРѕ РЅРµ РЅР°Р№РґРµРЅРѕ: {pathVideo}");
+
+        // Р•СЃР»Рё С„Р°Р№Р» РІ С„РѕСЂРјР°С‚Рµ WebM, РєРѕРЅРІРµСЂС‚РёСЂСѓРµРј РµРіРѕ РІ MP4
+        string secondVideoPath = uploadedVideoPath;
+        if (Path.GetExtension(uploadedVideoPath).Equals(".webm", StringComparison.OrdinalIgnoreCase))
+        {
+            secondVideoPath = await ConvertWebMToMp4Async(uploadedVideoPath);
+
+            // РЈРґР°Р»РёС‚СЊ РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ WebM С„Р°Р№Р» РїРѕСЃР»Рµ РєРѕРЅРІРµСЂС‚Р°С†РёРё
+            if (File.Exists(uploadedVideoPath))
+                File.Delete(uploadedVideoPath);
+        }
+
+        // РџРѕР»СѓС‡РµРЅРёРµ СЂР°Р·СЂРµС€РµРЅРёР№ Рё СЂР°Р·РјРµСЂРѕРІ РїРµСЂРІРѕРіРѕ РІРёРґРµРѕ
+        var mediaInfoFirst = await FFmpeg.GetMediaInfo(pathVideo);
+        var firstVideoStream = mediaInfoFirst.VideoStreams.FirstOrDefault()
+            ?? throw new InvalidOperationException("РџРµСЂРІРѕРµ РІРёРґРµРѕ РЅРµ СЃРѕРґРµСЂР¶РёС‚ РІРёРґРµРѕРїРѕС‚РѕРєР°.");
+
+        // РџРѕР»СѓС‡РµРЅРёРµ СЂР°Р·СЂРµС€РµРЅРёР№ Рё СЂР°Р·РјРµСЂРѕРІ РІС‚РѕСЂРѕРіРѕ РІРёРґРµРѕ
+        var mediaInfoSecond = await FFmpeg.GetMediaInfo(secondVideoPath);
+        var secondVideoStream = mediaInfoSecond.VideoStreams.FirstOrDefault()
+            ?? throw new InvalidOperationException("Р’С‚РѕСЂРѕРµ РІРёРґРµРѕ РЅРµ СЃРѕРґРµСЂР¶РёС‚ РІРёРґРµРѕРїРѕС‚РѕРєР°.");
+
+        // РћРїСЂРµРґРµР»СЏРµРј, РєР°РєРѕРµ РІРёРґРµРѕ С€РёСЂРµ
+        int width, height;
+        if (firstVideoStream.Width > secondVideoStream.Width)
+        {
+            width = (firstVideoStream.Width % 2 == 0) ? firstVideoStream.Width : firstVideoStream.Width + 1;
+            height = (firstVideoStream.Height % 2 == 0) ? firstVideoStream.Height : firstVideoStream.Height + 1;
+        }
+        else
+        {
+            width = (secondVideoStream.Width % 2 == 0) ? secondVideoStream.Width : secondVideoStream.Width + 1;
+            height = (secondVideoStream.Height % 2 == 0) ? secondVideoStream.Height : secondVideoStream.Height + 1;
+        }
+
+        // РџСѓС‚СЊ РґР»СЏ РјР°СЃС€С‚Р°Р±РёСЂРѕРІР°РЅРЅРѕРіРѕ РІС‚РѕСЂРѕРіРѕ РІРёРґРµРѕ
+        string scaledSecondVideoPath = Path.Combine(Path.GetTempPath(), $"scaled_{video.FileName}");
+
+        await FFmpeg.Conversions.New()
+            .AddParameter($"-i \"{secondVideoPath}\" -vf \"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black\"")
+            .SetOutput(scaledSecondVideoPath)
+            .Start();
+
+        string firstSecondVideoPath = Path.Combine(Path.GetTempPath(), $"first_{video.FileName}");
+
+        // РњР°СЃС€С‚Р°Р±РёСЂРѕРІР°С‚СЊ РІС‚РѕСЂРѕРµ РІРёРґРµРѕ
+        await FFmpeg.Conversions.New()
+            .AddParameter($"-i \"{pathVideo}\" -vf \"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black\"")
+            .SetOutput(firstSecondVideoPath)
+            .Start();
+
+        // РџСѓС‚СЊ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°
+        string outputVideoPath = Path.Combine(Path.GetTempPath(), $"output_{nameVideo}");
+
+        if (point)
+        {
+            await FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{firstSecondVideoPath}\" -i \"{scaledSecondVideoPath}\" -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]\" -map \"[outv]\" -map \"[outa]\"")
+                .SetOutput(outputVideoPath)
+                .Start();
+        }
+        else
+        {
+            await FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{scaledSecondVideoPath}\" -i \"{firstSecondVideoPath}\" -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]\" -map \"[outv]\" -map \"[outa]\"")
+                .SetOutput(outputVideoPath)
+                .Start();
+        }
+        // РћР±СЉРµРґРёРЅРёС‚СЊ РґРІР° РІРёРґРµРѕ
+
+
+        // Р—Р°РјРµРЅРёС‚СЊ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРµ РІРёРґРµРѕ РЅРѕРІС‹Рј
+        if (File.Exists(pathVideo))
+            File.Delete(pathVideo);
+
+        File.Move(outputVideoPath, pathVideo);
+
+        // РЈРґР°Р»РёС‚СЊ РІСЂРµРјРµРЅРЅС‹Рµ С„Р°Р№Р»С‹
+        if (File.Exists(secondVideoPath))
+            File.Delete(secondVideoPath);
+
+        if (File.Exists(scaledSecondVideoPath))
+            File.Delete(scaledSecondVideoPath);
+
+        if (File.Exists(firstSecondVideoPath))
+            File.Delete(firstSecondVideoPath);
+    }
+
+    public async Task<string> ConvertWebMToMp4Async(string inputFilePath)
+    {
+        if (!File.Exists(inputFilePath))
+            throw new FileNotFoundException($"Р¤Р°Р№Р» {inputFilePath} РЅРµ РЅР°Р№РґРµРЅ.");
+
+        // РЈР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ СЂР°СЃС€РёСЂРµРЅРёРµ РІС…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° - .webm
+        if (!Path.GetExtension(inputFilePath).Equals(".webm", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Р¤Р°Р№Р» РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ WebM.");
+
+        // РџСѓС‚СЊ РґР»СЏ РІС‹С…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р°
+        string outputFilePath = Path.Combine(Path.GetTempPath(), $"{Path.GetFileNameWithoutExtension(inputFilePath)}.mp4");
+
+        // Р’С‹РїРѕР»РЅСЏРµРј РєРѕРЅРІРµСЂС‚Р°С†РёСЋ WebM РІ MP4
+        await FFmpeg.Conversions.New()
+            .AddParameter($"-i \"{inputFilePath}\" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k")
+            .SetOutput(outputFilePath)
+            .Start();
+
+        return outputFilePath;
+    }
+
+
+    public async Task<List<VideoInfo>> GetAllVideo(int idUser)
+    {
+        List<Video> videos = await _videoRepository.GetNameVideo(idUser);
+
+        List<VideoInfo> listInfo = new();
+
+        foreach (Video video in videos)
+        {
+            var mediaInfo = await FFmpeg.GetMediaInfo(video.PathVideo);
+
+            VideoInfo videoInfo = new VideoInfo(video.NameVideo , mediaInfo.Duration.ToString(), video.Smile ?? "");
+
+            listInfo.Add(videoInfo);
+        }
+
+        return listInfo;
+    }
+    public async Task DeleteVideoAsync(string videoName, int idUser)
+    {
+        try
+        {
+            string pathVideo = await _videoRepository.GetPathVideoAsync(videoName, idUser);
+
+            if (File.Exists(pathVideo))
+            {
+                File.Delete(pathVideo);
+            }
+
+            await _videoRepository.DeleteVideoAsync(videoName, idUser);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Not delete Exception: " + ex.Message, ex);
+        }
     }
 
 }
